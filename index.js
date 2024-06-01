@@ -2,11 +2,11 @@ const express = require('express');
 const bodyParser = require('body-parser');
 
 const app = express();
-const PORT = 3000;
+const PORT = 8080;
 
 app.use(bodyParser.json());
 
-// product repository
+// Mock product repository
 const productRepository = {
     products: [],
     getAllProducts: function() {
@@ -17,8 +17,13 @@ const productRepository = {
     }
 };
 
-// Valid product types
-const validProductTypes = ['BOOK', 'FOOD', 'GADGET','OTHER'];
+// Enum for valid product types
+const ProductType = Object.freeze({
+    gadget: 'gadget',
+    book: 'book',
+    food: 'food',
+    other: 'other'
+});
 
 // Custom error response body
 function ErrorResponseBody(timestamp, status, error, path) {
@@ -31,7 +36,7 @@ function ErrorResponseBody(timestamp, status, error, path) {
 // Middleware to validate product type query parameter
 function validateProductType(req, res, next) {
     const type = req.query.type;
-    if (type && !validProductTypes.includes(type.toUpperCase())) {
+    if (type && !Object.values(ProductType).includes(type)) {
         return res.status(400).json(
             new ErrorResponseBody(
                 new Date().toISOString(),
@@ -48,12 +53,14 @@ function validateProductType(req, res, next) {
 function validateProductRequest(req, res, next) {
     const { name, type, inventory, cost } = req.body;
     
-    if (!name || !type || inventory === undefined || cost === undefined) {
+    if (!name || !type || !inventory || !cost 
+        || isNaN(inventory) || isNaN(cost) 
+        || typeof(inventory) == "boolean" || typeof(cost) == "boolean") {
         return res.status(400).json(
             new ErrorResponseBody(
                 new Date().toISOString(),
                 400,
-                "Request fields must not be null",
+                "Invalid Request field(s)",
                 req.originalUrl
             )
         );
@@ -81,7 +88,7 @@ function validateProductRequest(req, res, next) {
         );
     }
 
-    if (!validProductTypes.includes(type.toUpperCase())) {
+    if (!Object.values(ProductType).includes(type)) {
         return res.status(400).json(
             new ErrorResponseBody(
                 new Date().toISOString(),
@@ -125,7 +132,7 @@ app.post('/products', validateProductRequest, (req, res) => {
     const newProduct = {
         id: productRepository.getAllProducts().length + 1,
         name,
-        type: type.toUpperCase(),
+        type: type,
         inventory,
         cost
     };
