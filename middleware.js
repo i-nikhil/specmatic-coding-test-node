@@ -71,7 +71,7 @@ function validateProductRequest(req, res, next) {
             new ErrorResponseBody(
                 new Date().toISOString(),
                 400,
-                `Invalid number fields`,
+                `Invalid Number fields`,
                 req.originalUrl
             )
         );
